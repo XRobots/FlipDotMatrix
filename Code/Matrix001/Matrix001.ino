@@ -60,36 +60,7 @@ void loop() {
           if (Serial.available()) {         // read serial terminal
                 char c = Serial.read();
    
-                if (c == 'a')  {
-                    input = 1;
-                }                
-                else if (c == 'b') {
-                    input = 2;
-                }
-                else if (c == 'c') {
-                    input = 3;
-                }
-                else if (c == 'd') {
-                    input = 4;
-                }
-                else if (c == 'e') {
-                    input = 5;
-                }
-                else if (c == 'f') {
-                    input = 6;
-                }
-                else if (c == 'g') {
-                    input = 7;
-                }
-                else if (c == 'h') {
-                    input = 8;
-                }
-                else if (c == 'i') {
-                    input = 9;
-                }
-                else if (c == 'j') {
-                    input = 10;
-                }
+                input = (c - 'a') + 1;
           }
 
           if (input == 1) {         // all off
@@ -335,36 +306,12 @@ void loop() {
             previousFlipMillis = currentMillis;
             flipFlag = 2;
           }
-          else if (flipFlag == 2 && currentMillis - previousFlipMillis >= flipDelay) {
-            demandPos = 2;
+          else if (flipFlag > 1 && flipFlag < 8 && currentMillis - previousFlipMillis >= flipDelay) {
+            /*if we are between 2 and 8 inclusive, all we do is increase the flag and set the demand position based on the previous state*/
+            demandPos = (flipFlag + 2) / 2;
             previousFlipMillis = currentMillis;
-            flipFlag = 3;
+            flipFlag = flipFlag + 1;
           }
-          else if (flipFlag == 3 && currentMillis - previousFlipMillis >= flipDelay) {
-            demandPos = 2.5;
-            previousFlipMillis = currentMillis;
-            flipFlag = 4;
-          }
-          else if (flipFlag == 4 && currentMillis - previousFlipMillis >= flipDelay) {
-            demandPos = 3;
-            previousFlipMillis = currentMillis;
-            flipFlag = 5;
-          }
-          else if (flipFlag == 5 && currentMillis - previousFlipMillis >= flipDelay) {
-            demandPos = 3.5;
-            previousFlipMillis = currentMillis;
-            flipFlag = 6;
-          }
-          else if (flipFlag == 6 && currentMillis - previousFlipMillis >= flipDelay) {
-            demandPos = 4;
-            previousFlipMillis = currentMillis;
-            flipFlag = 7;
-          }
-          else if (flipFlag == 7 && currentMillis - previousFlipMillis >= flipDelay) {
-            demandPos = 4.5;
-            previousFlipMillis = currentMillis;
-            flipFlag = 8;
-          } 
           else if (flipFlag == 8 && currentMillis - previousFlipMillis >= flipDelay) {
             demandPos = 5;
 
@@ -403,40 +350,10 @@ void loop() {
             previousFlipMillis = currentMillis;
             flipFlag = 12;
           } 
-          else if(flipFlag == 12 && currentMillis - previousFlipMillis >= flipDelay) {
-            demandPos = 4;
+          else if(flipFlag > 11 && flipFlag < 19 && currentMillis - previousFlipMillis >= flipDelay) {
+            demandPos = ((18-flipFlag)/2)+1;
             previousFlipMillis = currentMillis;
-            flipFlag = 13;
-          }
-          else if (flipFlag == 13 && currentMillis - previousFlipMillis >= flipDelay) {
-            demandPos = 3.5;
-            previousFlipMillis = currentMillis;
-            flipFlag = 14;
-          }
-          else if (flipFlag == 14 && currentMillis - previousFlipMillis >= flipDelay) {
-            demandPos = 3;
-            previousFlipMillis = currentMillis;
-            flipFlag = 15;
-          }
-          else if (flipFlag == 15 && currentMillis - previousFlipMillis >= flipDelay) {
-            demandPos = 2.5;
-            previousFlipMillis = currentMillis;
-            flipFlag = 16;
-          }
-          else if (flipFlag == 16 && currentMillis - previousFlipMillis >= flipDelay) {
-            demandPos = 2;
-            previousFlipMillis = currentMillis;
-            flipFlag = 17;
-          }
-          else if(flipFlag == 17 && currentMillis - previousFlipMillis >= flipDelay) {
-            demandPos = 1.5;
-            previousFlipMillis = currentMillis;
-            flipFlag = 18;
-          }
-          else if(flipFlag == 18 && currentMillis - previousFlipMillis >= flipDelay) {
-            demandPos = 1;
-            previousFlipMillis = currentMillis;
-            flipFlag = 19;
+            flipFlag = flipFlag + 1;
           }
           else if(flipFlag == 19 && currentMillis - previousFlipMillis >= flipDelay) {
             demandPos = 1;         
@@ -469,34 +386,10 @@ void loop() {
 
 
           // make sure we can drive linear axis from demand position
-
-          if (demandPos == 1) {
-            pos1();
-          }
-          else if (demandPos == 1.5) {
-            pos1a();
-          }
-          else if (demandPos == 2) {
-            pos2();
-          }
-          else if (demandPos == 2.5) {
-            pos2a();
-          }
-          else if (demandPos == 3) {
-            pos3();
-          }
-          else if (demandPos == 3.5) {
-            pos3a();
-          }
-          else if (demandPos == 4) {
-            pos4();
-          }
-          else if (demandPos == 4.5) {
-            pos4a();
-          }
-          else if (demandPos == 5) {
-            pos5();
-          }     
+          // numbers start from 1 and go up in halfs
+          // multiply by 2 to always get a whole number, and then minus 2 at the end to get a zero index
+          int demandPosIndex = (int)((demandPos*2)-2);
+          pos(demandPosIndex);
 
           //******** check if the linear axis got to the target yet ********
           //******** if it has draw the pattern *********
@@ -504,53 +397,12 @@ void loop() {
           encoderDiff = abs(encoder0Target - encoder0Pos);
           if (encoderDiff < 250) {    // if we got to the target then move the flip dot servos
 
-                if (demandPos == 1) {             // flip
-                  topState = pattern[0];
-                  middleState = pattern[1];
-                  bottomState = pattern[2];
-                }
-                if (demandPos == 1.5) {           // intermediate         
-                  topState = prevPattern[0];
-                  middleState = prevPattern[1];
-                  bottomState = prevPattern[2];
-                }
-                else if (demandPos == 2) {        // flip
-                  topState = pattern[3];
-                  middleState = pattern[4];
-                  bottomState = pattern[5];
-                }
-                if (demandPos == 2.5) {           // intermediate 
-                  topState = prevPattern[3];
-                  middleState = prevPattern[4];
-                  bottomState = prevPattern[5];
-                }
-                else if (demandPos == 3) {        // flip
-                  topState = pattern[6];
-                  middleState = pattern[7];
-                  bottomState = pattern[8];
-                }
-                if (demandPos == 3.5) {           // intermediate 
-                  topState = prevPattern[6];
-                  middleState = prevPattern[7];
-                  bottomState = prevPattern[8];
-                }
-                else if (demandPos == 4) {        // flip
-                  topState = pattern[9];
-                  middleState = pattern[10];
-                  bottomState = pattern[11];
-                }
-                if (demandPos == 4.5) {           // intermediate 
-                  topState = prevPattern[9];
-                  middleState = prevPattern[10];
-                  bottomState = prevPattern[11];
-                }
-                else if (demandPos == 5) {        // flip
-                  topState = pattern[12];
-                  middleState = pattern[13];
-                  bottomState = pattern[14];
-                }
+                int stateIndex = abs(3 * (demandPos - 1));
 
-          }          
+                topState = pattern[stateIndex];
+                middleState = pattern[stateIndex+1];
+                bottomState = pattern[stateIndex+2];
+          }
     
           
           // drive linear axis
@@ -625,49 +477,21 @@ void bottom0() {
 
 // linear axis positions - fine tuning goes in here for encoder feedback etc
 
-void pos1() {
-  encoder0Target = 0;
+void pos(int index) {
+  // target always increases by 6000, so 0 index will start at 0 and go up in 6000s
+  encoder0Target = 6000 * index;
 }
-
-void pos1a() {
-  encoder0Target = 6000;
-}
-
-void pos2() {
-  encoder0Target = 12000;
-}
-
-void pos2a() {
-  encoder0Target = 18000;
-}
-
-void pos3() {
-  encoder0Target = 24000;
-}
-
-void pos3a() {
-  encoder0Target = 30000;
-}
-
-void pos4() {
-  encoder0Target = 36000;
-}
-
-void pos4a() {
-  encoder0Target = 42000;
-}
-
-void pos5() {
-  encoder0Target = 48000;
-}
-
 
 void doEncoderA(){  
 
+  //only read pins once per call to reduce hardware waits
+  int pinAState = digitalRead(encoder0PinA);
+  int pinBState = digitalRead(encoder0PinB);
+
   // look for a low-to-high on channel A
-  if (digitalRead(encoder0PinA) == HIGH) { 
+  if (pinAState == HIGH) { 
     // check channel B to see which way encoder is turning
-    if (digitalRead(encoder0PinB) == LOW) {  
+    if (pinBState == LOW) {  
       encoder0Pos = encoder0Pos + 1;         // CW
     } 
     else {
@@ -677,7 +501,7 @@ void doEncoderA(){
   else   // must be a high-to-low edge on channel A                                       
   { 
     // check channel B to see which way encoder is turning  
-    if (digitalRead(encoder0PinB) == HIGH) {   
+    if (pinBState == HIGH) {   
       encoder0Pos = encoder0Pos + 1;          // CW
     } 
     else {
@@ -689,10 +513,14 @@ void doEncoderA(){
 
 void doEncoderB(){  
 
+  //only read pins once per call to reduce hardware waits
+  int pinAState = digitalRead(encoder0PinA);
+  int pinBState = digitalRead(encoder0PinB);
+
   // look for a low-to-high on channel B
-  if (digitalRead(encoder0PinB) == HIGH) {   
+  if (pinBState == HIGH) {   
    // check channel A to see which way encoder is turning
-    if (digitalRead(encoder0PinA) == HIGH) {  
+    if (pinAState == HIGH) {  
       encoder0Pos = encoder0Pos + 1;         // CW
     } 
     else {
@@ -702,7 +530,7 @@ void doEncoderB(){
   // Look for a high-to-low on channel B
   else { 
     // check channel B to see which way encoder is turning  
-    if (digitalRead(encoder0PinA) == LOW) {   
+    if (pinAState == LOW) {   
       encoder0Pos = encoder0Pos + 1;          // CW
     } 
     else {
